@@ -15,7 +15,7 @@ module topSystolicArray
   , output var logic                      o_validResult
   );
 
-  // {{{ Check matrix dimension size is valid
+
 
     localparam bit N_VALID =
       &{ N > 2
@@ -26,15 +26,9 @@ module topSystolicArray
     $error("Matrix dimension size 'N' is invalid.");
   end: ParamCheck
 
-  // }}} Check matrix dimension size is valid
-
-  // {{{ Control counter
-  // This counter is used to determine when to assert o_validResult and sets up
-  // the necessary control signals.
-
-  // Number of clock cycles required to complete matrix multiplication.
+ 
   localparam int unsigned MULT_CYCLES = 3*N-2;
-  // `+1` to support counter_q + 1;
+
   localparam int unsigned MULT_CYCLES_W = $clog2(MULT_CYCLES+1);
 
   logic [MULT_CYCLES_W-1:0] counter_d, counter_q;
@@ -52,8 +46,7 @@ module topSystolicArray
     else
       counter_d = '0;
 
-  //o_validResult is asserted to signal the end of the matrix multiplication
-  // process.
+ 
   logic validResult_q;
 
   always_ff @(posedge i_clk, posedge i_arst)
@@ -67,11 +60,6 @@ module topSystolicArray
   always_comb
     o_validResult = validResult_q;
 
-  // }}} Control counter
-
-  // {{{ Systolic array clock gate
-
-  // logic doProcess_d, doProcess_q;
 
   always_ff @(posedge i_clk, posedge i_arst)
     if (i_arst)
@@ -87,27 +75,19 @@ module topSystolicArray
     else
       doProcess_d = doProcess_q;
 
-  // }}} Systolic array clock gate
-
-  // {{{ Set-up row and column matrices
+ 
 
   localparam int unsigned PAD = 8*(N-1);
   localparam bit [PAD-1:0] APPEND_ZERO = PAD'(0);
 
-  // The rows are inputs to the i_a port of PEs in the first column.
-  // The columns are inputs to the i_b port of PEs in the first row.
+ 
   logic [N-1:0][(2*N)-2:0][7:0] row_d, row_q;
   logic [N-1:0][(2*N)-2:0][7:0] col_d, col_q;
 
   logic [N-1:0][N-1:0][7:0] invertedRowElements;
   logic [N-1:0][N-1:0][7:0] invertedColElements;
 
-  // When i_validInput is asserted set up the row and col matrices. Else, right
-  // shift by 1 element (8 bits) to pass the next inputs to the systolic array.
 
-  // If (i_validInput) and (counter_q != '0) are both asserted the validInput
-  // condition should take priority since the synthesis tool infers if, else as
-  // priority encoding.
 
   for (genvar i = 0; i < N; i++) begin: perRowCol
 
@@ -122,7 +102,7 @@ module topSystolicArray
                       (counter_q != '0) ? (row_q[i] >> 8) : 
                       row_q[i];
 
-    // Invert the positions of the elements in each row to form the row matrix.
+    
     for (genvar j = 0; j < N; j++) begin: perRowElement
 
 
@@ -141,7 +121,7 @@ module topSystolicArray
                       (counter_q != '0) ? (col_q[i] >> 8) : 
                       col_q[i];
 
-    // Invert the positions of the elements in each col to form the col matrix.
+ 
     for (genvar j = 0; j < N; j++) begin: perColElement
 
       
@@ -151,7 +131,7 @@ module topSystolicArray
 
   end: perRowCol
 
-  // }}} Set-up rows and columns matrices
+
 
   systolicArray
   #(.N (N))
